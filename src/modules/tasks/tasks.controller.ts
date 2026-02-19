@@ -1,5 +1,14 @@
-import { Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Body,
+} from '@nestjs/common';
 import { TasksService } from './tasks.service';
+import { CreateTaskDto } from './dto/create-task.dto';
 
 @Controller('/api/task') //Ruta padre
 export class TasksController {
@@ -18,7 +27,8 @@ export class TasksController {
   }
 
   @Post() //Los parámetros se especifican en el body de la petición
-  public insertTask(task: any) {
+  public insertTask(@Body() task: CreateTaskDto): any {
+    console.error('insert', task);
     return this.tsksSvc.insertTask(task);
   }
 
@@ -31,4 +41,6 @@ export class TasksController {
   public deleteTask(id: number) {
     return this.tsksSvc.deleteTask(id);
   }
+
+  //Documentación en-- nestjs validation
 }
