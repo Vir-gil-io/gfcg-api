@@ -13,3 +13,11 @@ async function bootstrap() {
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
+
+//?MySQL
+//! npm i mysql2
+//! npm i @types/mysql -D
+
+//?POSTGRES
+//! npm i pg
+//! npm i @types/pg -D

@@ -9,14 +9,15 @@ import {
 } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { Task } from './entities/task.entity';
 
 @Controller('/api/task') //Ruta padre
 export class TasksController {
   constructor(private tsksSvc: TasksService) {}
-    //! http:localhost:3000/api/task
+  //! http:localhost:3000/api/task
   @Get()
-  getAllTasks(): string {
-    return this.tsksSvc.getAlltasks();
+  async getAllTasks(): Promise<Task[]> {
+    return await this.tsksSvc.getAlltasks();
   }
 
   //! http:localhost:3000/api/task/(id)
