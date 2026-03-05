@@ -65,14 +65,12 @@ export class TasksController {
   public async deleteTask(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<boolean> {
-    const result = await this.tsksSvc.deleteTask(id);
-    if (!result) {
-      throw new HttpException(
-        'No se pudo eliminar la tarea',
-        HttpStatus.NOT_FOUND,
-      );
+    try {
+      await this.tsksSvc.deleteTask(id);
+    } catch (error) {
+      throw new HttpException(`Task not found ${id}`, HttpStatus.NOT_FOUND);
     }
-    return result;
+    return true;
 
     // Documentación en--> nestjs validation
   }
