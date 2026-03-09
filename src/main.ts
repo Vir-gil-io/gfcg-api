@@ -36,3 +36,7 @@ bootstrap();
 
 //? SWAGGER
 //! npm i @nestjs/swagger
+
+//? BCRYPT
+//!npm i bcrypt
+//!npm i -D @types/bcrypt
