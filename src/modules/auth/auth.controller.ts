@@ -1,22 +1,43 @@
-import { Controller, Get, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { UtilService } from 'src/common/services/util.service';
 
 @Controller('api/auth') //Ruta padre
 export class AuthController {
-  constructor(private authSvc: AuthService) {}
+  constructor(private readonly authSvc: AuthService,
+    private readonly utilSvc: UtilService
+  ) {}
   @Post('/login') //Pueden haber varias rutas, pero no es recomendable. Ruta hija
   @HttpCode(HttpStatus.OK) //Cambiar el código de respuesta, por defecto es 201 Created
-  public login(@Body() loginDto: LoginDto): string {
-    const { username, password } = loginDto;
+  public async login(@Body() login: LoginDto): Promise<any> {
+    const { username, password } = login;
 
-    // ToDo: Verificar el usuario y contraseña
+    // Verificar el usuario y contraseña
+    const user = await this.authSvc.getUserByUsername(username);
+    if (!user)
+      throw new UnauthorizedException('El usuario y/o contraseña es incorrecto')
 
-    // ToDo: Obtener la información del usuario (payload)
+    if (await this.utilSvc.checkPassword(password, user.password!)){
+      // Obtener la información del usuario (payload)
+      const { password, username, ...payload} = user;
     
-    // ToDo: Generar el JWT
+    //  Generar el JWT
+    const access_token = await this.utilSvc.generateJWT(payload);
+
+    //Generar el refreshToken
+    const refresh_token = await this.utilSvc.generateJWT(payload, '7d');
+
+    // Devolever el JWT encriptado
+    return{
+      access_token,
+      refresh_token
+    }
+    }else{
+    throw new UnauthorizedException('El usuario y/o contraseña es incorrecto')
+
+    }
     
-    // ToDo: Devolever el JWT encriptado
     return this.authSvc.login();
   }
 }
