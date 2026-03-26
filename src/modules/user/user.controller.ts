@@ -12,6 +12,6 @@ export class UserController {
   ) {}
   
   //Poner en el insert
-  //encryptedPassword = await this.utilSvc.hashPassword(user.password);
+  //encryptedPassword = await this.utilSvc.hash(user.password);
   //user.password = encryptedPassword;
 }

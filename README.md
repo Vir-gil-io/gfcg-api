@@ -97,7 +97,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 Para sincronizar la base de datos se tiene que utilizar:
 ```
  npx prisma migrate dev --name init
-
+ npx prisma generate
 ```
 
 ## License

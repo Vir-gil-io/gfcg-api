@@ -1,12 +1,26 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, UnauthorizedException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { UtilService } from 'src/common/services/util.service';
+import { AuthGuard } from 'src/common/guards/auth.guard';
+import { request } from 'http';
 
 @Controller('api/auth') //Ruta padre
 export class AuthController {
-  constructor(private readonly authSvc: AuthService,
-    private readonly utilSvc: UtilService
+  constructor(
+    private readonly authSvc: AuthService,
+    private readonly utilSvc: UtilService,
   ) {}
   @Post('/login') //Pueden haber varias rutas, pero no es recomendable. Ruta hija
   @HttpCode(HttpStatus.OK) //Cambiar el código de respuesta, por defecto es 201 Created
@@ -16,47 +30,78 @@ export class AuthController {
     // Verificar el usuario y contraseña
     const user = await this.authSvc.getUserByUsername(username);
     if (!user)
-      throw new UnauthorizedException('El usuario y/o contraseña es incorrecto')
+      throw new UnauthorizedException(
+        'El usuario y/o contraseña es incorrecto',
+      );
 
-    if (await this.utilSvc.checkPassword(password, user.password!)){
+    if (await this.utilSvc.checkPassword(password, user.password!)) {
       // Obtener la información del usuario (payload)
-      const { password, username, ...payload} = user;
-    
-    //  Generar el JWT
-    const access_token = await this.utilSvc.generateJWT(payload);
+      const { password, username, ...payload } = user;
 
-    //Generar el refreshToken
-    const refresh_token = await this.utilSvc.generateJWT(payload, '7d');
+      //pasarlo a utils
 
-    // Devolever el JWT encriptado
-    return{
-      access_token,
-      refresh_token
+      //Generar el refreshToken
+      const refresh_token = await this.utilSvc.generateJWT(payload, '7d');
+      const hashRT = await this.utilSvc.hash(refresh_token);
+
+      //Asignar el hash al usuario
+      await this.authSvc.updateHash(user.id, hashRT);
+      payload.hash = hashRT;
+
+      //FIXME: Asignar el hash al usuario
+
+      //  Generar el JWT
+      const access_token = await this.utilSvc.generateJWT(payload, '1h');
+
+      // Devolever el JWT encriptado
+      return {
+        access_token,
+        refresh_token: hashRT,
+      };
+    } else {
+      throw new UnauthorizedException(
+        'El usuario y/o contraseña es incorrecto',
+      );
     }
-    }else{
-    throw new UnauthorizedException('El usuario y/o contraseña es incorrecto')
 
-    }
-    
     return this.authSvc.login();
   }
-}
 
-//POST /auth/register - 201 Created
+  //POST /auth/register - 201 Created
 
-@Get('/me')
-public getProfile() {
-  
-}
+  @Get('/me')
+  @UseGuards(AuthGuard)
+  public getProfile(@Req() request: any) {
+    const user = request['user'];
+    return user;
+  }
 
-@Post()
-public refreshToken() {
-  
-}
+  @Post('/refresh')
+  @UseGuards(AuthGuard)
+  public async refreshToken(@Req() request: any) {
+    //obtener el usuario en sesión
+    const sessionUser = request['user'];
+    const user = await this.authSvc.getUserById(sessionUser.id);
+    if (!user || !user.hash) throw new ForbiddenException('Acceso Denegado');
 
-@Post('/logout')
-public logout() {
-  
+    //Comparar el token recibido con el token guardado
+    if (sessionUser.hash != user.hash) throw new ForbiddenException('Token inválido');
+
+    //FIXME: Si el oken es válido se generan nuevos token's
+    return {
+      access_token: '',
+      refreshToken: '',
+    };
+  }
+
+  @Post('/logout')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(AuthGuard)
+  public async logout(@Req() request: any) {
+    const session = request['user'];
+    const user = await this.authSvc.updateHash(session.id, null);
+    return user;
+  }
 }
 
 //nest g (generate) --help para ver los comandos de generación disponibles, así como sus opciones
