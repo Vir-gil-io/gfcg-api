@@ -15,6 +15,7 @@ import { LoginDto } from './dto/login.dto';
 import { UtilService } from 'src/common/services/util.service';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { request } from 'http';
+import { AppException } from 'src/common/exceptions/app.exception';
 
 @Controller('api/auth') //Ruta padre
 export class AuthController {
@@ -82,10 +83,13 @@ export class AuthController {
     //obtener el usuario en sesión
     const sessionUser = request['user'];
     const user = await this.authSvc.getUserById(sessionUser.id);
-    if (!user || !user.hash) throw new ForbiddenException('Acceso Denegado');
+    if (!user || !user.hash)
+      throw new AppException('Token inválido', HttpStatus.FORBIDDEN, '2');
+    //throw new ForbiddenException('Acceso Denegado');
 
     //Comparar el token recibido con el token guardado
-    if (sessionUser.hash != user.hash) throw new ForbiddenException('Token inválido');
+    if (sessionUser.hash != user.hash)
+      throw new ForbiddenException('Token inválido');
 
     //FIXME: Si el oken es válido se generan nuevos token's
     return {

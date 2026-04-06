@@ -34,3 +34,14 @@ model Task {
   user_id Int
   user User @relation(fields: [user_id], references: [id]) //Una tarea pertenece a un usuario
 }
+
+model Logs{
+  id Int @default(autoincrement()) @id
+  statusCode Int
+  timeStamp DateTime
+  path String @db.MediumText()
+  error String @db.MediumText()
+  errorCode String @db.MediumText()
+  session_id Int?
+  user User? @relation(fields: [session_id], references : [id])
+}
