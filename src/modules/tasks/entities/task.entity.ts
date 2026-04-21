@@ -1,9 +1,9 @@
 export class Task {
-  id: number;
-  name: string;
-  description: string;
-  priority: boolean;
-  userId: number;
+  id!: number;
+  name!: string;
+  description!: string;
+  priority!: boolean;
+  user_id!: number;
 }
 //dto son datos de entrada a partir del usuario
 

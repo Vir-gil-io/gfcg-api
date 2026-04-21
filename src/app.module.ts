@@ -1,13 +1,26 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from './modules/auth/auth.module';
-import { TasksModule } from './modules/tasks/tasks.module';
-import { TaskModule } from './module/task/task.module';
-import { UserController } from './modules/user/user.controller';
-import { UserModule } from './modules/user/user.module';
-import { UtilService } from './common/services/util/util.service';
+import { AuthModule } from './modules/auth/interfaces/auth.module';
+import { TasksModule } from './modules/tasks/interfaces/tasks.module';
+import { UserController } from './modules/user/interfaces/user.controller';
+import { UserModule } from './modules/user/interfaces/user.module';
+import { UtilService } from './common/services/util.service';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+
 @Module({
-  imports: [AuthModule, TasksModule, TaskModule, UserModule],
-  controllers: [UserController],
-  providers: [UtilService],
+  imports: [
+    AuthModule,
+    TasksModule,
+    UserModule,
+    ConfigModule.forRoot({ isGlobal: true }),
+    JwtModule.registerAsync({
+      global: true,
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: { expiresIn: '1h' },
+      }),
+    }),
+  ],
 })
 export class AppModule {}

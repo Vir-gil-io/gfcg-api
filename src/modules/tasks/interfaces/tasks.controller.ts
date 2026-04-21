@@ -11,9 +11,9 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { TasksService } from './tasks.service';
-import { CreateTaskDto } from './dto/create-task.dto';
-import { Task } from './entities/task.entity';
-import { UpdateTaskDto } from './dto/update-task.dto';
+import { CreateTaskDto } from '../dto/create-task.dto';
+import { Task } from '../entities/task.entity';
+import { updateTaskDto } from '../dto/update-task.dto';
 
 @Controller('/api/task') //Ruta padre
 export class TasksController {
@@ -30,10 +30,9 @@ export class TasksController {
     @Param('id', ParseIntPipe) id: number, //Cuidar parámetros insertados
   ): Promise<Task> {
     const result = await this.tsksSvc.getTaskById(id);
-    console.log('Tipo de dato:', typeof result);
     if (result == undefined) {
       throw new HttpException(
-        `Tarea con ID ${id} no encontrada`,
+        `Tarea con ID no encontrada`,
         HttpStatus.NOT_FOUND,
       );
     }
@@ -56,7 +55,7 @@ export class TasksController {
   @Put(':id') //Los parámetros se especifican en el body de la petición, pero el id se especifica en la ruta
   public async updateTask(
     @Param('id', ParseIntPipe) id: number,
-    @Body() task: UpdateTaskDto,
+    @Body() task: updateTaskDto,
   ): Promise<Task> {
     return await this.tsksSvc.updateTask(id, task);
   }
@@ -68,7 +67,7 @@ export class TasksController {
     try {
       await this.tsksSvc.deleteTask(id);
     } catch (error) {
-      throw new HttpException(`Task not found ${id}`, HttpStatus.NOT_FOUND);
+      throw new HttpException(`Task not found`, HttpStatus.NOT_FOUND);
     }
     return true;
 

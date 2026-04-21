@@ -11,7 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginDto } from './dto/login.dto';
+import { LoginDto } from '../dto/login.dto';
 import { UtilService } from 'src/common/services/util.service';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { request } from 'http';
@@ -41,6 +41,9 @@ export class AuthController {
 
       //pasarlo a utils
 
+      //  Generar el JWT
+      const access_token = await this.utilSvc.generateJWT(payload, '1h');
+
       //Generar el refreshToken
       const refresh_token = await this.utilSvc.generateJWT(payload, '7d');
       const hashRT = await this.utilSvc.hash(refresh_token);
@@ -49,26 +52,18 @@ export class AuthController {
       await this.authSvc.updateHash(user.id, hashRT);
       payload.hash = hashRT;
 
-      //FIXME: Asignar el hash al usuario
-
-      //  Generar el JWT
-      const access_token = await this.utilSvc.generateJWT(payload, '1h');
 
       // Devolever el JWT encriptado
       return {
         access_token,
-        refresh_token: hashRT,
+        refresh_token //: hashRT,
       };
     } else {
       throw new UnauthorizedException(
         'El usuario y/o contraseña es incorrecto',
       );
     }
-
-    return this.authSvc.login();
   }
-
-  //POST /auth/register - 201 Created
 
   @Get('/me')
   @UseGuards(AuthGuard)

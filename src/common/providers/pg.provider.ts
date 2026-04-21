@@ -7,8 +7,8 @@ export const pgProvider = {
     const client = new Client({
       host: 'localhost',
       port: 5432,
-      user: 'admin',
-      password: 'qwerty',
+      user: 'postgres',
+      password: 'T0st4dasDeTing4!',
       database: 'gids6081_db',
     });
     await client.connect(); //Establece la conexión con la base de datos utilizando los parámetros proporcionados.
