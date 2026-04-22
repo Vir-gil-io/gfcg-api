@@ -16,6 +16,7 @@ import { UtilService } from 'src/common/services/util.service';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { request } from 'http';
 import { AppException } from 'src/common/exceptions/app.exception';
+import { hash } from 'crypto';
 
 @Controller('api/auth') //Ruta padre
 export class AuthController {
@@ -37,9 +38,12 @@ export class AuthController {
 
     if (await this.utilSvc.checkPassword(password, user.password!)) {
       // Obtener la información del usuario (payload)
-      const { password, username, ...payload } = user;
-
-      //pasarlo a utils
+      const payload = {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        hash: user.hash, //pasarlo a utils
+      };
 
       //  Generar el JWT
       const access_token = await this.utilSvc.generateJWT(payload, '1h');
@@ -52,11 +56,10 @@ export class AuthController {
       await this.authSvc.updateHash(user.id, hashRT);
       payload.hash = hashRT;
 
-
       // Devolever el JWT encriptado
       return {
         access_token,
-        refresh_token //: hashRT,
+        refresh_token, //: hashRT,
       };
     } else {
       throw new UnauthorizedException(

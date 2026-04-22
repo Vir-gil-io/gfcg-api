@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { PrismaService } from 'src/common/services/prisma.service';
 
@@ -34,6 +34,16 @@ export class TasksService {
 
   // Crear
   async insertTask(data: CreateTaskDto): Promise<Task> {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: data.user_id,
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Usuario no existe');
+    }
+
     return await this.prisma.task.create({
       data: {
         name: data.name,
