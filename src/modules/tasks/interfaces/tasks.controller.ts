@@ -9,27 +9,31 @@ import {
   HttpException,
   HttpStatus,
   ParseIntPipe,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from '../dto/create-task.dto';
-import { Task } from '../entities/task.entity';
 import { updateTaskDto } from '../dto/update-task.dto';
+import { AuthGuard } from 'src/common/guards/auth.guard';
 
 @Controller('/api/task') //Ruta padre
+@UseGuards(AuthGuard)
 export class TasksController {
   constructor(private tsksSvc: TasksService) {}
   //! http:localhost:3000/api/task
   @Get()
-  async getAllTasks(): Promise<Task[]> {
-    return await this.tsksSvc.getAlltasks();
+  async getAllTasks(@Req() request: any) {
+    return await this.tsksSvc.getTasksByUser(request['user'].id);
   }
 
   //! http:localhost:3000/api/task/(id)
   @Get(':id')
   public async listTaskById(
     @Param('id', ParseIntPipe) id: number, //Cuidar parámetros insertados
-  ): Promise<Task> {
-    const result = await this.tsksSvc.getTaskById(id);
+    @Req() request: any,
+  ) {
+    const result = await this.tsksSvc.getTaskById(id, request['user'].id);
     if (result == undefined) {
       throw new HttpException(
         `Tarea con ID no encontrada`,
@@ -41,8 +45,8 @@ export class TasksController {
   }
 
   @Post() //Los parámetros se especifican en el body de la petición
-  public async insertTask(@Body() task: CreateTaskDto): Promise<Task> {
-    const result = this.tsksSvc.insertTask(task);
+  public async insertTask(@Body() task: CreateTaskDto, @Req() request: any) {
+    const result = this.tsksSvc.insertTask(task, request['user'].id);
     if (result == undefined) {
       throw new HttpException(
         `Tarea no registrada`,
@@ -56,20 +60,22 @@ export class TasksController {
   public async updateTask(
     @Param('id', ParseIntPipe) id: number,
     @Body() task: updateTaskDto,
-  ): Promise<Task> {
-    return await this.tsksSvc.updateTask(id, task);
+    @Req() request: any,
+  ) {
+    return await this.tsksSvc.updateTask(id, task, request['user'].id);
   }
 
   @Delete(':id') //El id se especifica en la ruta
   public async deleteTask(
     @Param('id', ParseIntPipe) id: number,
-  ): Promise<boolean> {
+    @Req() request: any,
+  ) {
     try {
-      await this.tsksSvc.deleteTask(id);
+      await this.tsksSvc.deleteTask(id, request['user'].id);
     } catch (error) {
       throw new HttpException(`Task not found`, HttpStatus.NOT_FOUND);
     }
-    return true;
+    return { message: 'Tarea eliminada correctamente' };
 
     // Documentación en--> nestjs validation
   }

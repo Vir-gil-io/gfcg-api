@@ -9,4 +9,5 @@ export class User {
   password?: string;
   tasks: Task[] = [];
   created_at!: Date;
+  role!: string;
 }

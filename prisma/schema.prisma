@@ -21,6 +21,7 @@ model User {
   username String @db.VarChar(100)
   password String @db.Text
   hash String? @db.Text() //npx prisma migrate dev --name init
+  role String @default("USER") @db.VarChar(10)
   created_at DateTime @default(now())
   tasks Task[] //Un usuario puede tener muchas tareas
   logs Logs[] 
@@ -43,6 +44,8 @@ model Logs{
   path String @db.Text()
   error String @db.Text()
   errorCode String @db.Text()
+  event String? @db.Text()
+  severity String @default("INFO") @db.VarChar(20)
   session_id Int?
   user User? @relation(fields: [session_id], references : [id])
 }

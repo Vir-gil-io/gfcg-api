@@ -8,21 +8,23 @@ export class AuthService {
 
   public async getUserByUsername(username: string): Promise<User | null> {
     return await this.prisma.user.findFirst({
-      where: { username }
+      where: { username },
+      include: { tasks: true },
     });
   }
 
   public async getUserById(id: number): Promise<User | null> {
     return await this.prisma.user.findFirst({
-      where: {id}
+      where: { id },
+      include: { tasks: true },
     });
   }
 
   public async updateHash(user_id: number, hash: string | null): Promise<User> {
     return await this.prisma.user.update({
-      where: {id: user_id},
-      data: {hash}
-    })
+      where: { id: user_id },
+      data: { hash },
+      include: { tasks: true },
+    });
   }
-
 }

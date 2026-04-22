@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "Logs" ADD COLUMN     "event" TEXT,
+ADD COLUMN     "severity" VARCHAR(20) NOT NULL DEFAULT 'INFO';
+
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "role" VARCHAR(10) NOT NULL DEFAULT 'USER';

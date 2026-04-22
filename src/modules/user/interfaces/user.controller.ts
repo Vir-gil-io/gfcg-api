@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpException,
   HttpStatus,
@@ -9,6 +10,7 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
@@ -17,7 +19,8 @@ import { UpdateUserDto } from '../dto/update-user.dto';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UtilService } from 'src/common/services/util.service';
 import { AuthGuard } from 'src/common/guards/auth.guard';
-
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
 @Controller('api/user')
 export class UserController {
   constructor(
@@ -27,7 +30,9 @@ export class UserController {
 
   //! http: localhost: 3000/api/user
   @Get()
-  async getAllUser(): Promise<User[]> {
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('ADMIN') //solo el admin puede ver la lista de usuarios
+  async getAllUser() {
     //es importante especificar que tipo de dato se esta retornando
     return await this.userSvc.getAllUser();
   }
@@ -35,58 +40,49 @@ export class UserController {
   //! http: localhost: 3000/api/user/1
   //depende de cuantos parametros se envian para poder obtener la ruta del get que debe de ser diferente, ninguna puede ser igual
   @Get(':id') //lo adecuado es indicar que tipo de valor es
+  @UseGuards(AuthGuard)
   public async listUserById(
     @Param('id', ParseIntPipe) id: number,
-  ): Promise<User> {
-    const result = await this.userSvc.getUserById(id);
-    console.log('Tipo de dato: ', typeof result);
+    @Req() request: any,
+  ) {
+    const sessionUser = request['user'];
+    if (sessionUser.role !== 'ADMIN' && sessionUser.id !== id)
+      throw new ForbiddenException('No puedes ver el perfil de otro usuario');
 
-    if (result == undefined)
-      throw new HttpException(
-        `Usuario con ID no encontrado`,
-        HttpStatus.NOT_FOUND,
-      ); //mensaje de error por HTTP, con mensaje personalizado
+    return await this.userSvc.getUserById(id);
+  }
 
-    return result;
+  // Registro abierto (sin autenticación)
+  @Post()
+  public async insertUser(@Body() user: CreateUserDto) {
+    user.password = await this.utilSvc.hashPassword(user.password);
+    return await this.userSvc.insertUser(user);
   }
 
   @Put(':id')
   @UseGuards(AuthGuard)
   public async updateUser(
     @Param('id', ParseIntPipe) id: number,
-    @Body() task: UpdateUserDto,
-  ): Promise<User> {
-    return await this.userSvc.updateUser(id, task);
-  }
-
-  @Post() //el insert se debe de enviar por medio del body, por si solo no se puede enviar datos
-  public async insertUser(@Body() user: CreateUserDto): Promise<User> {
-    //@Body es un decorator, siempre inician con un @
-    const encryptedPassword = await this.utilSvc.hash(user.password);
-
-    user.password = encryptedPassword;
-
-    const result = await this.userSvc.insertUser(user);
-
-    if (result == undefined)
-      throw new HttpException(
-        'Usuario no registrado',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+    @Body() dto: UpdateUserDto,
+    @Req() request: any,
+  ) {
+    const sessionUser = request['user'];
+    if (sessionUser.role !== 'ADMIN' && sessionUser.id !== id)
+      throw new ForbiddenException(
+        'No puedes editar el perfil de otro usuario',
       );
 
-    return result;
+    return await this.userSvc.updateUser(id, dto);
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard)
-  public async deleteUser(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<boolean> {
+  public async deleteUser(@Param('id', ParseIntPipe) id: number) {
     try {
       await this.userSvc.deleteUser(id);
     } catch (error) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
-    return true;
+    return { message: 'Usuario eliminado correctamente' };
   }
 }
