@@ -77,7 +77,15 @@ export class UserController {
 
   @Delete(':id')
   @UseGuards(AuthGuard)
-  public async deleteUser(@Param('id', ParseIntPipe) id: number) {
+  public async deleteUser(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() request: any,
+  ) {
+    const sessionUser = request['user'];
+    if (sessionUser.role !== 'ADMIN' && sessionUser.id !== id)
+      throw new ForbiddenException(
+        'No puedes eliminar el perfil de otro usuario',
+      );
     try {
       await this.userSvc.deleteUser(id);
     } catch (error) {

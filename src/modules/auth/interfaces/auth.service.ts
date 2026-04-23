@@ -9,14 +9,12 @@ export class AuthService {
   public async getUserByUsername(username: string): Promise<User | null> {
     return await this.prisma.user.findFirst({
       where: { username },
-      include: { tasks: true },
     });
   }
 
   public async getUserById(id: number): Promise<User | null> {
     return await this.prisma.user.findFirst({
       where: { id },
-      include: { tasks: true },
     });
   }
 
@@ -24,7 +22,6 @@ export class AuthService {
     return await this.prisma.user.update({
       where: { id: user_id },
       data: { hash },
-      include: { tasks: true },
     });
   }
 }

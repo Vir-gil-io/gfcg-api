@@ -7,7 +7,7 @@ export class User {
   username!: string;
   hash?: string | null | undefined;
   password?: string;
-  tasks: Task[] = [];
+  tasks?: Task[] = [];
   created_at!: Date;
   role!: string;
 }
