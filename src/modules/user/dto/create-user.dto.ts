@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import {
   IsNotEmpty,
   IsString,
@@ -7,22 +8,30 @@ import {
 } from 'class-validator';
 
 export class CreateUserDto {
+  @Transform(({ value }: { value: string }) => value?.trim())
   @IsString()
   @IsNotEmpty()
   @MinLength(3)
   @MaxLength(100)
+  @Matches(/\S/, { message: 'El nombre no puede contener solo espacios' })
   name!: string;
 
+  @Transform(({ value }: { value: string }) => value?.trim())
   @IsString()
   @IsNotEmpty()
   @MinLength(3)
   @MaxLength(100)
+  @Matches(/\S/, { message: 'El apellido no puede contener solo espacios' })
   lastname!: string;
 
+  @Transform(({ value }: { value: string }) => value?.trim())
   @IsString()
   @IsNotEmpty()
   @MinLength(3)
   @MaxLength(50)
+  @Matches(/^\S+$/, {
+    message: 'El nombre de usuario no puede contener espacios',
+  })
   username!: string;
 
   @IsNotEmpty()

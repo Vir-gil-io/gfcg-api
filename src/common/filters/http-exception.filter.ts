@@ -7,7 +7,6 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { timestamp } from 'rxjs';
 import { LogsService } from '../services/logs.service';
 
 @Catch()
@@ -29,12 +28,13 @@ export class AllExceptionFilter implements ExceptionFilter {
         ? exception.getResponse()
         : 'Internal Server Error';
 
-    const errorMessage =
+    const userMessage =
       typeof rawMessage === 'string'
         ? rawMessage
         : ((rawMessage as any).message ?? 'Error interno del servidor');
 
-    const errorCode =
+    // Código interno — solo para logs, NUNCA se envía al cliente
+    const internalCode =
       (exception as any).errorCode ??
       (exception as any).code ??
       'UNKNOWN_ERROR';
@@ -45,20 +45,18 @@ export class AllExceptionFilter implements ExceptionFilter {
     await this.logsService.createLog({
       statusCode: status,
       path: request.url,
-      error: errorMessage,
-      errorCode,
+      error: userMessage,
+      errorCode: internalCode,
       event: 'HTTP_ERROR',
       severity: status >= 500 ? 'ERROR' : 'WARNING',
       session_id: sessionUser?.id ?? null,
     });
 
-    //respuesta del servidor
     response.status(status).json({
       statusCode: status,
       timestamp: new Date().toISOString(),
       path: request.url,
-      error: errorMessage,
-      errorCode,
+      error: userMessage,
     });
   }
 }

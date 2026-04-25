@@ -14,13 +14,22 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { User } from '../../../../generated/prisma/client';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UtilService } from 'src/common/services/util.service';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
+import { IsIn, IsNotEmpty, IsString } from 'class-validator';
+
+
+// DTO inline para cambio de rol
+class ChangeRoleDto {
+  @IsString()
+  @IsNotEmpty()
+  @IsIn(['USER', 'ADMIN'], { message: 'El rol debe ser USER o ADMIN' })
+  role!: string;
+}
 @Controller('api/user')
 export class UserController {
   constructor(
@@ -54,9 +63,11 @@ export class UserController {
 
   // Registro abierto (sin autenticación)
   @Post()
-  public async insertUser(@Body() user: CreateUserDto) {
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  public async insertUser(@Body() user: CreateUserDto, @Req() req: any) {
     user.password = await this.utilSvc.hashPassword(user.password);
-    return await this.userSvc.insertUser(user);
+    return await this.userSvc.insertUser(user, req['user'].id);
   }
 
   @Put(':id')
@@ -75,6 +86,18 @@ export class UserController {
     return await this.userSvc.updateUser(id, dto);
   }
 
+  // Cambio de rol — solo ADMIN
+  @Put(':id/role')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  public async changeRole(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ChangeRoleDto,
+    @Req() req: any,
+  ) {
+    return await this.userSvc.changeRole(id, dto.role, req['user'].id);
+  }
+
   @Delete(':id')
   @UseGuards(AuthGuard)
   public async deleteUser(
@@ -87,7 +110,7 @@ export class UserController {
         'No puedes eliminar el perfil de otro usuario',
       );
     try {
-      await this.userSvc.deleteUser(id);
+      await this.userSvc.deleteUser(id, sessionUser.id);
     } catch (error) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
