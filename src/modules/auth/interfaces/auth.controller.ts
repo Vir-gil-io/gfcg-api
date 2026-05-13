@@ -16,6 +16,7 @@ import { UtilService } from 'src/common/services/util.service';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { AppException } from 'src/common/exceptions/app.exception';
 import { LogsService } from 'src/common/services/logs.service';
+import { last } from 'rxjs';
 
 @Controller('api/auth')
 export class AuthController {
@@ -73,6 +74,7 @@ export class AuthController {
     const payload = {
       id: user.id,
       name: user.name,
+      lastname: user.lastname,
       username: user.username,
       role: user.role,
     };
@@ -86,8 +88,8 @@ export class AuthController {
   @Get('/me')
   @UseGuards(AuthGuard)
   public getProfile(@Req() request: any) {
-    const { id, name, username, role } = request['user'];
-    return { id, name, username, role };
+    const { id, name, lastname, username, role } = request['user'];
+    return { id, name, lastname, username, role };
   }
 
   @Post('/refresh')
@@ -115,6 +117,7 @@ export class AuthController {
     const payload = {
       id: user.id,
       name: user.name,
+      lastname: user.lastname,
       username: user.username,
       role: user.role,
     };

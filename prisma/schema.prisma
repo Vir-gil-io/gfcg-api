@@ -46,6 +46,6 @@ model Logs{
   errorCode String @db.Text()
   event String? @db.Text()
   severity String @default("INFO") @db.VarChar(20)
-  session_id Int?
-  user User? @relation(fields: [session_id], references : [id])
+  user_id Int?
+  user User? @relation(fields: [user_id], references : [id], onDelete: SetNull)
 }
